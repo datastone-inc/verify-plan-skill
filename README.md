@@ -18,17 +18,23 @@ Post-implementation audit skill for Claude Code `/plan`. Verifies that a `/plan`
 
 ## Installation
 
-### Step 1: Clone directly into the skills folder
+### Step 1: Clone into the global skills folder
 
 ```bash
-# Global (available in all projects)
 mkdir -p ~/.claude/skills
 git clone https://github.com/datastone-inc/plan-implemented-skill ~/.claude/skills/plan-implemented
-
-# Or project-scoped (available only in this repo)
-mkdir -p .claude/skills
-git clone https://github.com/datastone-inc/plan-implemented-skill .claude/skills/plan-implemented
 ```
+
+This installs the skill globally, available in all your projects. That covers most people.
+
+**Project-scoped install (niche):** If you need the skill scoped to a single repo, avoid cloning into it — that creates a nested git repo, which Git handles poorly. Copy from the global install instead:
+
+```bash
+mkdir -p .claude/skills
+cp -r ~/.claude/skills/plan-implemented .claude/skills/plan-implemented
+```
+
+Note: the copy won't receive updates via `git pull` — you'll need to re-copy after updating the global install.
 
 ### Step 2: Install the slash command
 
