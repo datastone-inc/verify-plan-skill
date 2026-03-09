@@ -18,7 +18,7 @@ Post-implementation audit skill for Claude Code `/plan`. Verifies that a `/plan`
 
 ## Installation
 
-### Step 1: Clone into the global skills folder
+### Clone into the global skills folder
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -35,14 +35,6 @@ cp -r ~/.claude/skills/plan-implemented .claude/skills/plan-implemented
 ```
 
 Note: the copy won't receive updates via `git pull` — you'll need to re-copy after updating the global install.
-
-### Step 2: Install the slash command
-
-```bash
-python ~/.claude/skills/plan-implemented/scripts/install_command.py
-```
-
-Works on macOS, Linux, and Windows. Creates a symlink in `~/.claude/commands/` (falls back to copying on Windows if symlinks require elevated privileges).
 
 Restart Claude Code or start a new session.
 
