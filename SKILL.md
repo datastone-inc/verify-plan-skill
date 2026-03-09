@@ -66,6 +66,20 @@ The script exits 0 if all items pass, 1 if any issues are found.
 
 If the user explicitly asks to save the report (e.g. `--output path`), write it there instead.
 
+### Fallback: script fails to parse
+
+If the script exits with "No verifiable items found in plan" or extracts 0 items, **do not give up**. Fall back to a heuristic audit:
+
+1. Read the plan file yourself
+2. Get the diff using the appropriate scope:
+   - `plan` scope: `git log --before=<plan-mtime-iso> -1 --format=%H --all` to find the anchor commit, then `git diff <anchor>`
+   - `uncommitted`: `git diff HEAD`
+   - `branch`: `git diff <base>..HEAD`
+   - `all`: `git diff <base>`
+3. Break the plan into discrete checkable items yourself — look for: file targets, function/type/field names in backticks, numbered steps, sub-headings describing work
+4. For each item, check whether the diff covers it — read the relevant source files if needed
+5. Continue to Step 5 with your findings (present the same scorecard format)
+
 ## Step 5: Present the summary
 
 Read the temp file. Present a concise summary to the user covering:
@@ -82,8 +96,10 @@ Read the temp file. Present a concise summary to the user covering:
 
 If everything passes, say so and you're done.
 
+Note: this scorecard is from mechanical pattern matching. Some items flagged as missing may be false positives (implemented under different names, inlined, or restructured). The walkthrough in Step 6 re-evaluates each gap by reading the actual code.
+
 **STOP.** You MUST call `AskUserQuestion` NOW to ask the user how they want to proceed. Suggested options:
-- Walk through the gaps (default — go Change by Change)
+- Walk through the gaps (default — go Change by Change, with code-level re-evaluation)
 - Jump to a specific Change group
 - Fix everything automatically
 - Just show me the details (dump the full checklist without interactive flow)
@@ -94,11 +110,17 @@ Do NOT proceed to Step 6 until the user responds.
 
 Walk through gaps one Change group at a time, starting with the most impactful. For each group with issues:
 
-1. **Explain what's missing and why.** Don't just list pattern names — look at the actual code and the plan to understand the architectural reason. For example: "The plan expected `classifyTurnOrigin()` as a separate method, but the implementation inlined the logic into `buildTurns()` — the patterns don't match but the intent might be covered."
+1. **Re-evaluate the script's findings.** The script does mechanical pattern matching — it has false negatives. Before presenting a gap to the user, read the relevant source files and diff sections for this Change group. Check whether the intent was implemented under a different name, inlined, or restructured. Only report items as missing after you've verified they're actually missing.
 
-2. **Assess severity.** Is this a blocker (feature broken), a gap (feature works but incomplete), or a false positive (implemented differently than the plan described)?
+2. **Explain what's missing and why.** Don't just list pattern names — explain the architectural reason. For example: "The plan expected `classifyTurnOrigin()` as a separate method, but the implementation inlined the logic into `buildTurns()` — the pattern doesn't match but the intent is covered."
 
-3. Be smart about false positives. The script does mechanical pattern matching — if a plan says "add method `foo()`" and the code has `fooBar()` that covers the same intent, flag it as likely covered rather than missing. Read the actual source files to verify before calling something a real gap.
+3. **Assess severity.** For each confirmed gap:
+   - **False positive** — implemented differently than the plan described (override the script's finding)
+   - **Blocker** — feature is broken without this
+   - **Gap** — feature works but incomplete
+   - **Nice-to-have** — plan item that isn't critical
+
+4. **Present your revised assessment**, noting where you agree with the script and where you override it. Be explicit: "The script flagged 5 items missing. After reading the code, 2 are false positives (implemented under different names), 2 are real gaps, and 1 is a nice-to-have."
 
 **STOP.** After presenting each Change group, you MUST call `AskUserQuestion` to ask the user what to do. Suggested options:
 - **Fix** — implement the missing pieces for this Change group
