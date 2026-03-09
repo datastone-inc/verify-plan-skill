@@ -144,6 +144,16 @@ Do NOT continue until the user responds.
 4. If they want re-verification, re-run with `--scope uncommitted` (to catch the just-made changes) and present an updated summary. Then continue the walkthrough with remaining Change groups.
 5. If they want to move on, proceed to the next Change group (back to Step 6).
 
+## Step 8: Clean up completed plan
+
+After a successful audit — either everything passes in Step 5, or the user finishes the walkthrough and all gaps are resolved — offer to delete the plan file.
+
+Only offer this for plans in `~/.claude/plans/` (the global auto-generated folder). Do not offer to delete plans stored inside a repo (e.g. `.claude/plans/`), as those are project-scoped and version-controlled.
+
+**STOP.** You MUST call `AskUserQuestion` to ask: "This plan is fully implemented. Want me to delete `<plan-file>`?"
+
+Do NOT delete the file until the user confirms. If the user says no, leave it.
+
 ## What the scripts check
 
 | Check | Meaning |
