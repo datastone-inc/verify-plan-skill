@@ -1,13 +1,13 @@
 ---
 name: plan-implemented
-description: "Post-implementation audit of Claude Code /plan output against actual code changes. Use when verifying a plan was implemented, checking if a plan was followed, auditing implementation completeness, finding dead code from a plan, or reviewing what was missed after Claude Code finished executing a plan. Supports reviewing committed changes, uncommitted work, or everything since the plan was created. Also trigger when the user says 'was the plan actually followed', 'did CC implement everything', 'check the plan against the diff', 'what did we miss', 'audit the plan', 'review uncommitted changes against the plan', or 'what changed since the plan'. Works with .claude/plans/ markdown files. Use this even when the user just wants a general post-implementation check — they don't need to say 'plan' explicitly if there's a plan in the project."
+description: "Post-implementation audit of Claude Code /plan output against actual code changes. Use when verifying a plan was implemented, checking if a plan was followed, auditing implementation completeness, finding dead code from a plan, or reviewing what was missed after Claude Code finished executing a plan. Supports reviewing committed changes, uncommitted work, or everything since the plan was created. Also trigger when the user says 'was the plan actually followed', 'did CC implement everything', 'check the plan against the diff', 'what did we miss', 'audit the plan', 'review uncommitted changes against the plan', or 'what changed since the plan'. Works with .claude/plans/ markdown files. Applies to general post-implementation checks even if the user doesn't explicitly mention 'plan'."
 argument-hint: "[plan-file] [--base branch] [--scope branch|plan|uncommitted|all]"
 allowed-tools: Bash(python:*), Bash(git:*), Read, Grep, Glob, Edit, AskUserQuestion
 ---
 
 # Plan Implementation Audit
 
-You are auditing whether a Claude Code `/plan` was fully implemented. The audit script gathers structured evidence (where patterns were found), and **you** make all implementation verdicts by reading the actual code. The script never says "implemented" or "not implemented" — that's your job.
+You are auditing whether a Claude Code `/plan` was fully implemented. The audit script gathers structured evidence (where patterns were found), and **you** make all implementation verdicts by reading the actual code. The script never says "implemented" or "not implemented"; that's your job.
 
 ## Step 1: Determine the plan file
 
@@ -31,7 +31,7 @@ The `--scope` flag controls which changes to review. If `$ARGUMENTS` includes `-
 
 | Scope | What it diffs | When to use |
 |-------|--------------|-------------|
-| `plan` (default) | Changes since the plan file was last modified, including uncommitted | Best general-purpose option — captures everything done since the plan was written |
+| `plan` (default) | Changes since the plan file was last modified, including uncommitted | Best general-purpose option: captures everything done since the plan was written |
 | `branch` | Committed changes only: `base..HEAD` | When you want a clean committed-only view |
 | `uncommitted` | Staged + unstaged vs HEAD | When the user just finished implementing and hasn't committed yet |
 | `all` | Committed + uncommitted vs base branch | When you want the complete picture against the base |
@@ -51,7 +51,7 @@ Note: `--base` is only used by the `branch` and `all` scopes. The `plan` scope a
 
 ## Step 4: Run the evidence-gathering script
 
-Output to a temp file — the user doesn't need to open it, you present the results interactively.
+Output to a temp file; the user doesn't need to open it, you present the results interactively.
 
 Use a temp filename based on the plan's basename so parallel runs don't collide:
 ```bash
@@ -60,16 +60,18 @@ python <skill-path>/scripts/review.py <plan-file> --base <branch> --scope <scope
 For example, if the plan file is `giggly-snacking-tarjan.md`, use `--output /tmp/plan-review-giggly-snacking-tarjan.md`.
 
 The script runs three phases:
-1. **Parse** — extracts discrete checkable items from the plan (types, functions, fields, filters, tests, wiring)
-2. **Evidence** — gathers diffs and current file contents according to the chosen scope
-3. **Cross-reference** — for each plan item, records WHERE its patterns were found (diff, current files, or nowhere)
+
+1. **Parse**: extracts discrete checkable items from the plan (types, functions, fields, filters, tests, wiring)
+2. **Evidence**: gathers diffs and current file contents according to the chosen scope
+3. **Cross-reference**: for each plan item, records WHERE its patterns were found (diff, current files, or nowhere)
 
 The script produces **evidence levels**, not implementation verdicts:
-- ✅ `IN_DIFF` — all patterns found in diff added lines (strong signal)
-- 🔍 `MIXED` — some in diff, others only in current files or not found
-- ⚠️ `PRE_EXISTING` — pattern names exist in codebase but NOT in diff (name match only — cannot confirm changes)
-- ❌ `NOT_FOUND` — not found anywhere
-- ⏭️ `SKIPPED` — nothing to verify mechanically
+
+- ✅ `IN_DIFF`: all patterns found in diff added lines (strong signal)
+- 🔍 `MIXED`: some in diff, others only in current files or not found
+- ⚠️ `PRE_EXISTING`: pattern names exist in codebase but NOT in diff (name match only; cannot confirm changes)
+- ❌ `NOT_FOUND`: not found anywhere
+- ⏭️ `SKIPPED`: nothing to verify mechanically
 
 The script exits 0 if all items are IN_DIFF with no dead-code signals, 1 otherwise.
 
@@ -90,7 +92,7 @@ If the script exits with "No verifiable items found in plan" or extracts 0 items
    - `uncommitted`: `git diff HEAD`
    - `branch`: `git diff <base>..HEAD`
    - `all`: `git diff <base>`
-3. Break the plan into discrete checkable items yourself — look for: file targets, function/type/field names in backticks, numbered steps, sub-headings describing work
+3. Break the plan into discrete checkable items yourself: look for file targets, function/type/field names in backticks, numbered steps, sub-headings describing work
 4. For each item, read the relevant source files and verify the plan's *specific changes* were made
 5. **CRITICAL: Do not confuse "name exists" with "plan work was done."** If the plan says "optimize `classifyBatch` to use batch API" and you find a `classifyBatch` function, you must verify it contains the *specific changes* the plan describes (batch API calls, new parameters, etc.), not just that a function with that name exists. Pre-existing code matching a plan item's name is NOT evidence of implementation.
 6. Continue to Step 5 with your findings
@@ -101,23 +103,23 @@ Read the temp file. For each plan item, **you** decide whether it was implemente
 
 ### Your evaluation process
 
-1. **IN_DIFF items** — patterns found in diff added lines. These are likely implemented, but skim the evidence to confirm the diff lines match the plan's intent (not just a coincidental name match in an unrelated change).
+1. **IN_DIFF items**: patterns found in diff added lines. These are likely implemented, but skim the evidence to confirm the diff lines match the plan's intent (not just a coincidental name match in an unrelated change).
 
-2. **MIXED items** — some patterns in diff, some not. Read the source files to determine: were the missing patterns implemented under different names, inlined, or genuinely missing?
+2. **MIXED items**: some patterns in diff, some not. Read the source files to determine whether the missing patterns were implemented under different names, inlined, or genuinely missing.
 
-3. **PRE_EXISTING items** — pattern names exist in the codebase but NOT in the diff. **These are the most dangerous for false positives.** You MUST read the actual code and compare it against the plan's description. A function named `classifyBatch` existing does NOT mean the plan's "optimize classifyBatch to use batch API" was implemented. Check for the specific changes the plan describes.
+3. **PRE_EXISTING items**: pattern names exist in the codebase but NOT in the diff. **These are the most dangerous for false positives.** You MUST read the actual code and compare it against the plan's description. A function named `classifyBatch` existing does NOT mean the plan's "optimize classifyBatch to use batch API" was implemented. Check for the specific changes the plan describes.
 
-4. **NOT_FOUND items** — not found anywhere. Likely not implemented, but check if the work was done under different names or restructured.
+4. **NOT_FOUND items**: not found anywhere. Likely not implemented, but check if the work was done under different names or restructured.
 
-5. **Dead-code signals** — patterns found in diff but grep suggests they're never called/assigned/read. Verify whether they're actually wired up.
+5. **Dead-code signals**: patterns found in diff but grep suggests they're never called/assigned/read. Verify whether they're actually wired up.
 
 ### Present your verdict
 
 Present a concise summary to the user:
 
-1. **Context** — which plan, scope used, branch, HEAD commit
-2. **Your scorecard** — your verdicts: implemented, not implemented, needs investigation
-3. **Per-Change overview** — one line per Change group. For example:
+1. **Context**: which plan, scope used, branch, HEAD commit
+2. **Your scorecard**: your verdicts: implemented, not implemented, needs investigation
+3. **Per-Change overview**: one line per Change group. For example:
    ```
    Change 1: Add TurnOrigin type — 3 items, all implemented
    Change 2: Claude Code normalizer — 8 items, 6 implemented, 2 missing
@@ -141,15 +143,15 @@ Do NOT proceed to Step 6 until the user responds.
 
 Walk through gaps one Change group at a time, starting with the most impactful. For each group with issues:
 
-1. **Show your analysis.** Read the relevant source files and diff sections. Explain what the plan expected vs what the code actually does. Be specific — quote code, not just pattern names.
+1. **Show your analysis.** Read the relevant source files and diff sections. Explain what the plan expected vs what the code actually does. Be specific: quote code, not just pattern names.
 
 2. **Assess each gap:**
-   - **Implemented differently** — the intent is covered but under a different name or structure
-   - **Blocker** — feature is broken without this
-   - **Gap** — feature works but incomplete
-   - **Nice-to-have** — plan item that isn't critical
+   - **Implemented differently**: the intent is covered but under a different name or structure
+   - **Blocker**: feature is broken without this
+   - **Gap**: feature works but incomplete
+   - **Nice-to-have**: plan item that isn't critical
 
-3. **Be explicit about your reasoning.** For example: "The plan expected `classifyTurnOrigin()` as a separate method, but the implementation inlined the logic into `buildTurns()` at line 142 — the intent is covered."
+3. **Be explicit about your reasoning.** For example: "The plan expected `classifyTurnOrigin()` as a separate method, but the implementation inlined the logic into `buildTurns()` at line 142: the intent is covered."
 
 **STOP.** After presenting each Change group, you MUST call `AskUserQuestion` to ask the user what to do. Suggested options:
 - **Fix** — implement the missing pieces for this Change group
@@ -187,12 +189,12 @@ Do NOT delete the file until the user confirms. If the user says no, leave it.
 
 | Evidence | Meaning |
 |----------|---------|
-| Pattern in diff | Identifier appears in added lines of the diff — strong signal of new work |
-| Pattern in current file | Identifier exists in the codebase but not in the diff — name match only, does NOT confirm changes |
+| Pattern in diff | Identifier appears in added lines of the diff: strong signal of new work |
+| Pattern in current file | Identifier exists in the codebase but not in the diff: name match only, does NOT confirm changes |
 | File modified | Target file was touched in the diff |
 | Dead-code signal | Pattern found but grep suggests it's never called/assigned/read |
 
-The script does NOT make pass/fail judgments. It provides structured evidence for your evaluation. Dead-code detection is grep-based — it catches "never assigned" and "never called" but not "condition always false" or "unreachable branch."
+The script does NOT make pass/fail judgments. It provides structured evidence for your evaluation. Dead-code detection is grep-based: it catches "never assigned" and "never called" but not "condition always false" or "unreachable branch."
 
 ## Example invocations
 

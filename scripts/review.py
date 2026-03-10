@@ -24,6 +24,13 @@ from gather_evidence import gather_evidence, run_git
 from cross_reference import cross_reference, generate_report, IN_DIFF, NOT_FOUND, PRE_EXISTING, MIXED
 
 
+# Check Python version requirement
+if sys.version_info < (3, 10):
+    print(f'Error: Python 3.10+ required, you are running {sys.version_info.major}.{sys.version_info.minor}', file=sys.stderr)
+    print('  Upgrade Python or use a virtual environment with Python 3.10+', file=sys.stderr)
+    sys.exit(1)
+
+
 def find_plans_directory(repo: Path) -> Path | None:
     """Discover the plans directory using CC's settings hierarchy.
 
@@ -140,8 +147,11 @@ def main():
             print('  Checked: .claude/settings.json, ~/.claude/settings.json,',
                   file=sys.stderr)
             print('           .claude/plans/, ~/.claude/plans/', file=sys.stderr)
-            print('  Specify a plan file explicitly or configure plansDirectory.',
+            print('', file=sys.stderr)
+            print('  → Run /plan in Claude Code to create a plan first', file=sys.stderr)
+            print('  → Or specify a plan file explicitly: /plan-implemented path/to/plan.md',
                   file=sys.stderr)
+            print('  → Or configure plansDirectory in .claude/settings.json', file=sys.stderr)
             sys.exit(1)
 
         md_files = sorted(plans_dir.glob('*.md'), key=lambda f: f.stat().st_mtime,
@@ -167,6 +177,7 @@ def main():
 
     if not (repo / '.git').exists():
         print(f'Error: {repo} is not a git repository', file=sys.stderr)
+        print('  → Run from inside a git repository, or use --repo /path/to/repo', file=sys.stderr)
         sys.exit(1)
 
     # Phase 1: Parse plan

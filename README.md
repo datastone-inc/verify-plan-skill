@@ -27,14 +27,14 @@ git clone https://github.com/datastone-inc/plan-implemented-skill ~/.claude/skil
 
 This installs the skill globally, available in all your projects. That covers most people.
 
-**Project-scoped install (niche):** If you need the skill scoped to a single repo, avoid cloning into it — that creates a nested git repo, which Git handles poorly. Copy from the global install instead:
+**Project-scoped install (niche):** If you need the skill scoped to a single repo, avoid cloning into it, as that creates a nested git repo which Git handles poorly. Copy from the global install instead:
 
 ```bash
 mkdir -p .claude/skills
 cp -r ~/.claude/skills/plan-implemented .claude/skills/plan-implemented
 ```
 
-Note: the copy won't receive updates via `git pull` — you'll need to re-copy after updating the global install.
+Note: the copy won't receive updates via `git pull`. You'll need to re-copy after updating the global install.
 
 Restart Claude Code or start a new session.
 
@@ -89,6 +89,56 @@ In Claude Code:
 | `uncommitted` | Staged + unstaged vs HEAD | Just finished implementing, haven't committed |
 | `all` | Committed + uncommitted vs base branch | Complete picture |
 
+### CLI Reference
+
+Direct script usage (for automation or debugging):
+
+```text
+usage: review.py [-h] [--base BASE] [--scope {branch,plan,uncommitted,all}]
+                 [--repo REPO] [--output OUTPUT] [--json] [--list]
+                 [plan_file]
+
+Audit whether a Claude Code /plan was fully implemented.
+
+positional arguments:
+  plan_file             Path to plan markdown file. If omitted, discovers the
+                        most recent plan from CC settings or default
+                        locations.
+
+options:
+  -h, --help            show this help message and exit
+  --base BASE           Git ref to diff against (default: main)
+  --scope {branch,plan,uncommitted,all}
+                        What changes to review: branch=committed vs base
+                        branch, plan=changes since plan was created/updated
+                        (default), uncommitted=only staged+unstaged vs HEAD,
+                        all=committed+uncommitted vs base branch
+  --repo REPO           Repository root (default: current directory)
+  --output OUTPUT       Output file path (default: PLAN_REVIEW.md in repo
+                        root)
+  --json                Output raw JSON results instead of markdown
+  --list                List available plans and exit
+```
+
+**Examples:**
+
+```bash
+# Run directly from command line
+python3 scripts/review.py examples/sample-plan.md --repo .
+
+# Review uncommitted work only
+python3 scripts/review.py --scope uncommitted
+
+# Compare against develop branch instead of main
+python3 scripts/review.py --base develop
+
+# Output JSON for further processing
+python3 scripts/review.py --json > results.json
+
+# List all available plans
+python3 scripts/review.py --list
+```
+
 ## Interactive flow
 
 1. **Summary**: scorecard and per-Change overview
@@ -112,6 +162,67 @@ To add a new language, add an entry to `scripts/languages.py`. No other code cha
 2. **Evidence**: gathers changes according to the chosen scope (branch diff, plan-anchored, uncommitted, or all)
 3. **Cross-reference**: checks each item against the diff; language-aware dead-code detection finds declared-but-unused symbols
 4. **Interactive**: Claude presents findings, walks through gaps, and offers to fix them
+
+## Architecture
+
+The skill operates as a 4-stage pipeline. Each stage is independent and testable:
+
+```text
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Parse      │ -> │   Evidence   │ -> │     Cross    │ -> │ Interactive  │
+│   Plan       │    │   Gather     │    │  Reference   │    │   Review     │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+```
+
+### Stage 1: Parse Plan ([`scripts/parse_plan.py`](scripts/parse_plan.py))
+
+Reads a Claude Code `/plan` markdown file and extracts verifiable items:
+
+- Recognizes `## Change N:` headings to group related work
+- Extracts code blocks and applies language-specific regex patterns from [`scripts/languages.py`](scripts/languages.py)
+- Finds inline code mentions in prose (e.g., "Update the `handleRequest` function")
+- Categorizes items: `type_definition`, `function`, `field`, `test`, `filter_logic`, `wiring`
+- Outputs structured JSON: `{id, change_id, change_title, file_pattern, expected_patterns, category}`
+
+### Stage 2: Evidence Gather ([`scripts/gather_evidence.py`](scripts/gather_evidence.py))
+
+Collects git diff and file contents according to scope:
+
+- **Scopes**:
+  - `plan` (default): Changes since plan file was last modified
+  - `branch`: Committed changes only (`base..HEAD`)
+  - `uncommitted`: Staged + unstaged vs HEAD
+  - `all`: Committed + uncommitted vs base
+- Parses unified diffs by file
+- Reads current file contents for pattern searching
+- Handles exact path and basename matching
+
+### Stage 3: Cross-Reference ([`scripts/cross_reference.py`](scripts/cross_reference.py))
+
+Matches plan patterns against diff evidence:
+
+- **Evidence levels**:
+  - ✅ `IN_DIFF`: All patterns found in added diff lines
+  - 🔍 `MIXED`: Some in diff, others pre-existing
+  - ⚠️ `PRE_EXISTING`: Pattern exists but not in diff
+  - ❌ `NOT_FOUND`: Not found anywhere
+  - ⏭️ `SKIPPED`: No mechanically verifiable patterns
+- **Dead-code detection**:
+  - Type definitions: searches for references elsewhere
+  - Functions: searches for calls using language-specific `call_pattern`
+  - Fields: searches for assignments and reads using `access_pattern`
+- Generates markdown report with evidence table and dead-code signals
+
+### Stage 4: Interactive Review (orchestrated by Claude Code)
+
+Claude Code reads the generated report and walks through findings with you:
+
+1. Presents summary scorecard and per-Change overview
+2. Reviews gaps one Change at a time, explaining evidence and severity
+3. Offers to implement missing pieces when you confirm
+4. Re-runs the audit after fixes to verify completion
+
+The scripts provide evidence; Claude Code makes the verdicts and suggests fixes.
 
 ## Contributing
 

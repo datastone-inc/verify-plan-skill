@@ -219,7 +219,10 @@ def gather_evidence(base: str, repo: Path, plan_files: list[str],
     # Check repo is a git repo
     rc, _, _ = run_git(['rev-parse', '--git-dir'], repo)
     if rc != 0:
-        evidence['errors'].append(f'{repo} is not a git repository')
+        evidence['errors'].append(
+            f'{repo} is not a git repository. '
+            'Run from inside a git repository, or pass --repo /path/to/repo'
+        )
         return evidence
 
     # For scopes that need a base ref, verify it exists
