@@ -1,5 +1,5 @@
 ---
-name: plan-implemented
+name: verify-plan
 description: "Post-implementation audit of Claude Code /plan output against actual code changes. Use when verifying a plan was implemented, checking if a plan was followed, auditing implementation completeness, finding dead code from a plan, or reviewing what was missed after Claude Code finished executing a plan. Supports reviewing committed changes, uncommitted work, or everything since the plan was created. Also trigger when the user says 'was the plan actually followed', 'did CC implement everything', 'check the plan against the diff', 'what did we miss', 'audit the plan', 'review uncommitted changes against the plan', or 'what changed since the plan'. Works with .claude/plans/ markdown files. Applies to general post-implementation checks even if the user doesn't explicitly mention 'plan'."
 argument-hint: "[plan-file] [--base branch] [--scope branch|plan|uncommitted|all]"
 allowed-tools: Bash(python:*), Bash(git:*), Read, Grep, Glob, Edit, AskUserQuestion
@@ -198,16 +198,16 @@ The script does NOT make pass/fail judgments. It provides structured evidence fo
 
 ## Example invocations
 
-User types: `/plan-implemented`
+User types: `/verify-plan`
 -> Auto-discover most recent plan, gather evidence, evaluate and walk through gaps
 
-User types: `/plan-implemented .claude/plans/turn-origin-tagging.md`
+User types: `/verify-plan .claude/plans/turn-origin-tagging.md`
 -> Use that specific plan file, evaluate changes since it was written
 
-User types: `/plan-implemented --scope uncommitted`
+User types: `/verify-plan --scope uncommitted`
 -> Auto-discover plan, evaluate only uncommitted work against it
 
-User types: `/plan-implemented --scope branch --base develop`
+User types: `/verify-plan --scope branch --base develop`
 -> Auto-discover plan, evaluate committed changes only vs develop
 
 User types: "check if the plan was actually implemented"

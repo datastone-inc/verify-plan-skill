@@ -1,5 +1,5 @@
 """
-Language pattern registry for plan-implemented.
+Language pattern registry for verify-plan.
 
 Each language entry defines:
   extensions   — file extensions that identify this language

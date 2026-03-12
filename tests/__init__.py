@@ -1,1 +1,1 @@
-# Tests for plan-implemented skill
+# Tests for verify-plan skill

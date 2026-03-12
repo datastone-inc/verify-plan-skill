@@ -1,7 +1,7 @@
 [project]
-name = "plan-implemented-skill"
+name = "verify-plan-skill"
 version = "1.0.0"
-description = "Post-implementation audit skill for Claude Code /plan — catches missing implementations, dead code, and gaps"
+description = "Post-implementation cross-check skill for Claude Code /plan — catches phantom completions, dead code, and gaps"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

@@ -2,7 +2,7 @@
 <p align="center"><img src="assets/datastone_logo.png" width="300" alt="dataStone logo" /></p>
 <!-- markdownlint-enable MD033 MD041 -->
 
-# plan-implemented skill for Claude Code
+# verify-plan skill for Claude Code
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -22,7 +22,7 @@ Post-implementation cross-check skill for Claude Code `/plan`. Verifies that a `
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone https://github.com/datastone-inc/plan-implemented-skill ~/.claude/skills/plan-implemented
+git clone https://github.com/datastone-inc/verify-plan-skill ~/.claude/skills/verify-plan
 ```
 
 This installs the skill globally, available in all your projects. That covers most people.
@@ -31,7 +31,7 @@ This installs the skill globally, available in all your projects. That covers mo
 
 ```bash
 mkdir -p .claude/skills
-cp -r ~/.claude/skills/plan-implemented .claude/skills/plan-implemented
+cp -r ~/.claude/skills/verify-plan .claude/skills/verify-plan
 ```
 
 Note: the copy won't receive updates via `git pull`. You'll need to re-copy after updating the global install.
@@ -41,7 +41,7 @@ Restart Claude Code or start a new session.
 ### Keeping it up-to-date
 
 ```bash
-cd ~/.claude/skills/plan-implemented && git pull
+cd ~/.claude/skills/verify-plan && git pull
 ```
 
 ## Requirements
@@ -57,22 +57,22 @@ In Claude Code:
 
 ``` text
 # Auto-discover most recent plan, review all changes (committed + uncommitted) since it was written
-/plan-implemented
+/verify-plan
 
 # Specify a plan file
-/plan-implemented .claude/plans/my-plan.md
+/verify-plan .claude/plans/my-plan.md
 
 # Review only uncommitted work
-/plan-implemented --scope uncommitted
+/verify-plan --scope uncommitted
 
 # Review committed changes only vs a branch
-/plan-implemented --scope branch --base develop
+/verify-plan --scope branch --base develop
 
 # Review everything (committed + uncommitted) vs main
-/plan-implemented --scope all
+/verify-plan --scope all
 
 # List available plans
-/plan-implemented --list
+/verify-plan --list
 
 # Or just say it naturally
 > was the plan actually followed?
@@ -80,7 +80,7 @@ In Claude Code:
 > I haven't committed yet, did I cover the plan?
 
 # You can also run the skill with ad-hoc AI augmentation, e.g.:
-> /plan-implemented list all the plans in .claude/plans in reverse chronological order with a brief summary title. run the plan-implemented skill on the ones I select in parallel.
+> /verify-plan list all the plans in .claude/plans in reverse chronological order with a brief summary title. run the verify-plan skill on the ones I select in parallel.
 ```
 
 ### Scopes

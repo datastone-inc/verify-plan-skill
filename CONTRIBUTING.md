@@ -1,4 +1,4 @@
-# Contributing to plan-implemented
+# Contributing to verify-plan
 
 Thank you for your interest in contributing! This guide will help you get started.
 
@@ -269,8 +269,8 @@ If you're stuck:
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/datastone-inc/plan-implemented-skill.git
-cd plan-implemented-skill
+git clone https://github.com/datastone-inc/verify-plan-skill.git
+cd verify-plan-skill
 ```
 
 ### Install Dev Dependencies
